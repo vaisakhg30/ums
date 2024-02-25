@@ -1,7 +1,7 @@
 const express = require('express');
 const adminController = require('../controllers/admin.controller');
 const adminCanController = require('../controllers/adminAuth.controller');
-const { verifyUserRole } = require('../middleware/authGuard.middleware');
+const { verifyUserRole } = require('../middleware/authguard.middleware');
 const { verifyAdmin } = require('../middleware/admin.middleware');
 
 const router = express.Router();

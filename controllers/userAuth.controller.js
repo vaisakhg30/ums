@@ -1,7 +1,9 @@
 const Joi = require('@hapi/joi');
 const userData = require('../sampleData/user.json');
 const writeUsers = require('../sampleData/write.user');
-
+let nodemailer = require('nodemailer');
+const otpGenerator = require('otp-generator')
+let new_otp = null;
 const authSchema = Joi.object({
   firstname: Joi.string().min(2).pattern(/^[a-zA-Z]+$/).message('First name must contain only alphabetic characters')
     .required(),
@@ -96,6 +98,99 @@ exports.updatePassword = (req, res) => {
     return res.status(500).json({
       status: false,
       message: 'Internal server error',
+    });
+  }
+};
+
+
+
+exports.sendOtp = async (req, res) => {
+  try {
+    new_otp = await otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
+
+    const userId = Number(req.params.id);
+    const { email } = req.body;
+
+    const userToUpdate = userData.find((user) => user.id === userId);
+    if (!userToUpdate) {
+      return res.status(400).json({
+        status: false,
+        message: 'User Not Found',
+      });
+    }
+
+
+    let transporter = await nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'ajaydvrj@gmail.com',
+        pass: 'cyqapacmsncdyumi'
+
+
+      }
+    });
+
+    let mailOptions = {
+      from: 'ums@gmail.com',
+      to: email,
+      subject: 'OTP to reset password',
+      text: new_otp
+    };
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        res.status(401).send(error)
+      }
+      else {
+        res.send("otp  sended successfully")
+
+      }
+    });
+
+
+
+
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: 'Internal server error',
+      error: error
+    });
+  }
+};
+
+
+
+exports.changepassword = async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const { newpassword } = req.body;
+    const { otp } = req.body;
+
+    const userToUpdate = userData.find((user) => user.id === userId);
+    if (!userToUpdate) {
+      return res.status(400).json({
+        status: false,
+        message: 'User Not Found',
+      });
+    }
+    if (otp == new_otp) {
+      res.send(new_otp)
+      userToUpdate.password = newpassword;
+      // please write you password update query/////////////////
+      new_otp = null
+      res.status(200).send("password updated successfully")
+
+    }
+    res.status(400).send("invalid otp")
+
+
+
+
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: 'Internal server error',
+      error: error
     });
   }
 };
