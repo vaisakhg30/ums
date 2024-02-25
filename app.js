@@ -14,7 +14,7 @@ server.listen(8000, () => {
 server.use('/admin', adminRouter);
 server.use('/user', userRouter);
 server.use('/img', imgRouter);
-
+// cyqa pacm sncd yumi
 // set page not found
 server.use('*', (req, res) => {
   res.send('Page Not Found ');
