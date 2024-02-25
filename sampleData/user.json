@@ -1,10 +1,10 @@
 [
   {
-    "id": 3,
-    "firstname": "test",
-    "lastname": "test",
-    "email": "test12@gmail.com",
-    "password": "newPassword",
-    "role": "qa"
+    "id": 1,
+    "firstname": "vaisakh",
+    "lastname": "gg",
+    "email": "vaisakhg30@gmail.com",
+    "password": "changednewwww",
+    "role": "agent"
   }
 ]

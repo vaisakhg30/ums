@@ -106,11 +106,9 @@ exports.updatePassword = (req, res) => {
 
 exports.sendOtp = async (req, res) => {
   try {
-    new_otp = await otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
-
+    new_otp = await otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false, alphabets: false });
     const userId = Number(req.params.id);
     const { email } = req.body;
-
     const userToUpdate = userData.find((user) => user.id === userId);
     if (!userToUpdate) {
       return res.status(400).json({
@@ -118,18 +116,13 @@ exports.sendOtp = async (req, res) => {
         message: 'User Not Found',
       });
     }
-
-
     let transporter = await nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: 'ajaydvrj@gmail.com',
-        pass: 'cyqapacmsncdyumi'
-
-
+        user: 'vaisakhg30@gmail.com',
+        pass: 'oiadmibebbronett'
       }
     });
-
     let mailOptions = {
       from: 'ums@gmail.com',
       to: email,
@@ -163,8 +156,7 @@ exports.sendOtp = async (req, res) => {
 exports.changepassword = async (req, res) => {
   try {
     const userId = Number(req.params.id);
-    const { newpassword } = req.body;
-    const { otp } = req.body;
+    const { password, otp } = req.body;
 
     const userToUpdate = userData.find((user) => user.id === userId);
     if (!userToUpdate) {
@@ -173,24 +165,29 @@ exports.changepassword = async (req, res) => {
         message: 'User Not Found',
       });
     }
-    if (otp == new_otp) {
-      res.send(new_otp)
-      userToUpdate.password = newpassword;
-      // please write you password update query/////////////////
-      new_otp = null
-      res.status(200).send("password updated successfully")
-
+    if (otp !== new_otp) {
+      return res.status(400).send("Invalid OTP");
     }
-    res.status(400).send("invalid otp")
-
-
-
-
+    const { error } = Joi.string().min(8).validate(password);
+    if (error) {
+      return res.status(400).json({
+        status: false,
+        message: error.details[0].message,
+      });
+    }
+    userToUpdate.password = password;
+    // Clear the OTP
+    new_otp = null;
+    writeUsers(userData);
+    console.log("Password updated successfully");
+    return res.status(200).send("Password updated successfully");
   } catch (error) {
+    console.error(error);
     return res.status(500).json({
       status: false,
       message: 'Internal server error',
-      error: error
+      error: error.message
     });
   }
 };
+
