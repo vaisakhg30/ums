@@ -1,10 +1,17 @@
 [
   {
     "id": 1,
-    "firstname": "vaisakh",
-    "lastname": "gg",
-    "email": "vaisakhg30@gmail.com",
-    "password": "changednewwww",
+    "name": "test1",
+    "email": "test1@gmail.com",
+    "password": "test1@12345",
+    "role": "admin"
+  },
+  {
+    "id": 1709366163289,
+    "firstName": "vaisakh",
+    "lastName": "gg",
+    "email": "vaisakhg301@gmail.com",
+    "password": "12345678",
     "role": "agent"
   }
 ]

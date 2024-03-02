@@ -1,48 +1,44 @@
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
-const usersData = require('../sampleData/user.json');
 
 exports.verifyUserRole = async (req, res, next) => {
-    try {
-        const envtoken =process.env.envtoken;
-        console.log("Inside middleware");
+  try {
+    const { envtoken } = process.env;
+    console.log('Inside middleware');
 
-        // Extract token from headers
-        const token = req?.headers?.authorization;
-        console.log("Token:", token);
-        const genericvalue = req.headers.genericvalue
-        console.log(genericvalue)
-         
-        // Decode and parse token
-        if (token) {
-            const base64String = token.split('.')[1];
-            console.log("Decoded Value:", base64String);
+    // Extract token from headers
+    const token = req.headers.authorization;
+    console.log('Token:', token);
+    const { genericvalue } = req.headers;
+    console.log(genericvalue);
 
-            const decodedValue = Buffer.from(base64String, 'base64').toString('ascii');
-            console.log("Decoded Value:", decodedValue);
+    // Decode and parse token
+    if (token && genericvalue) {
+      const base64String = token.split('.')[1];
+      console.log('Decoded Value:', base64String);
 
-            // Try to parse JSON
-            try {
-      
+      const decodedValue = Buffer.from(base64String, 'base64').toString('ascii');
+      console.log('Decoded Value:', decodedValue);
 
-                const decodedId = jwt.verify(token, envtoken);
+      // Try to parse JSON
+      try {
+        const decodedId = jwt.verify(token, envtoken);
 
-
-                if (decodedId.role==genericvalue) {
-                    next();
-                } else {
-                    res.status(401).send("Unauthorised access");
-                }
-            } catch (jsonParseError) {
-                console.error("JSON Parsing Error:", jsonParseError);
-                res.status(500).send("Internal Server Error");
-            }
+        if (decodedId.role === genericvalue && genericvalue != null) {
+          console.log('decodedId.role:', decodedId.role);
+          next();
         } else {
-            res.status(403).send("Token Expires");
+          res.status(401).send('Unauthorised access');
         }
-
-    } catch (error) {
-        console.error("Error:", error);
-        res.status(403).send("Token Expires");
+      } catch (jsonParseError) {
+        console.error('JSON Parsing Error:', jsonParseError);
+        res.status(500).send('Token missing or invalid');
+      }
+    } else {
+      res.status(403).send('choose generic  value');
     }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(403).send('Token Expires');
+  }
 };

@@ -1,55 +1,50 @@
-const Joi = require('@hapi/joi');
-const userData = require('../sampleData/user.json');
+const userData = require('../sampleData/data.json');
 const writeUsers = require('../sampleData/write.user');
-
-const authSchema = Joi.object({
-  firstname: Joi.string().min(2).pattern(/^[a-zA-Z]+$/).message('First name must contain only alphabetic characters')
-  .required(),
-  lastname: Joi.string().min(2).pattern(/^[a-zA-Z]+$/).message('Last name must contain only alphabetic characters')
-  .required(),
-  email: Joi.string().email().lowercase().required(),
-  password: Joi.string().min(8).required(),
-  role: Joi.string().required().valid('agent', 'supervisor', 'qa', 'qc'),
-});
+const registrationSchema = require('../schemas/registration.schema');
+const updateSchema = require('../schemas/update.schema');
 
 exports.addUser = (req, res) => {
   try {
-    const { error } = authSchema.validate(req.body);
+    const { error } = registrationSchema.validate(req.body);
     if (error) {
-      return res.status(400).send(error.details[0].message);
+      const errorMessage = error.details[0].message.replace(/['"]+/g, '');
+      return res.status(400).json({
+        status: false,
+        message: errorMessage,
+      });
     }
     if (req.body.role !== 'agent' && req.body.role !== 'supervisor' && req.body.role !== 'qa' && req.body.role !== 'qc') {
       return res.status(403).json({
         status: 'false',
-        message: 'Unauthorized role',
+        message: 'unauthorized role',
       });
     }
-    const newUser = { id: userData.length + 1, ...req.body };
+    const newUser = { id: new Date().getTime(), ...req.body };
     const emailExist = userData.find((value) => value.email === newUser.email);
     if (emailExist) {
-      return res.status(400).json({
+      return res.status(409).json({
         status: 'false',
-        message: 'Email is already exist',
+        message: 'email is already exist',
       });
     }
     const idExist = userData.find((value) => value.id === newUser.id);
     if (idExist) {
-      return res.status(400).json({
+      return res.status(409).json({
         status: 'false',
-        message: 'Id is already exist',
+        message: 'id is already exist',
       });
     }
     userData.push(newUser);
     writeUsers(userData);
-    return res.status(200).json({
+    return res.status(201).json({
       status: 'true',
-      message: 'New User Added',
+      message: 'registration successful',
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       status: 'false',
-      message: 'Token missing or invalid',
+      message: 'token missing or invalid',
     });
   }
 };
@@ -58,11 +53,12 @@ exports.updateUser = (req, res) => {
   try {
     const userId = Number(req.params.id);
     const updateUser = req.body;
-    const { error } = authSchema.validate(updateUser);
+    const { error } = updateSchema.validate(updateUser);
     if (error) {
+      const errorMessage = error.details[0].message.replace(/['"]+/g, '');
       res.status(400).json({
-        status: 'false',
-        message: error.details[0].message,
+        status: false,
+        message: errorMessage,
       });
     }
     const index = userData.findIndex((data) => data.id === userId);
@@ -72,18 +68,18 @@ exports.updateUser = (req, res) => {
       writeUsers(userData);
       res.status(200).json({
         status: 'true',
-        message: 'Updated',
+        message: 'user update successfully',
       });
     } else {
       res.status(404).json({
         status: 'false',
-        message: 'User Not Found',
+        message: 'user not found',
       });
     }
   } catch (error) {
     res.status(400).json({
       status: 'false',
-      message: 'Internal Server Error',
+      message: 'internal server error',
     });
   }
 };
@@ -91,36 +87,72 @@ exports.updateUser = (req, res) => {
 exports.deleteUser = (req, res) => {
   try {
     const userId = Number(req.params.id);
-    const indexToRemove = userData.findIndex((user) => user.id === userId);
-    if (indexToRemove !== -1) {
-      userData.splice(indexToRemove, 1);
-      writeUsers(userData);
-      return res.status(200).json({
-        status: 'true',
-        message: 'User Deleted',
+    const userToDelete = userData.find((user) => user.id === userId);
+    if (!userToDelete) {
+      return res.status(404).json({
+        status: false,
+        message: 'User not found',
       });
     }
-    return res.status(404).json({
-      status: 'false',
-      message: 'User Not Found',
+    if (userToDelete.role === 'admin') {
+      return res.status(400).json({
+        status: false,
+        message: 'Cannot delete admin',
+      });
+    }
+    const indexToRemove = userData.indexOf(userToDelete);
+    userData.splice(indexToRemove, 1);
+    writeUsers(userData);
+
+    return res.status(200).json({
+      status: true,
+      message: 'User deleted successfully',
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      status: 'false',
-      message: 'Internal Server Error',
+      status: false,
+      message: 'Internal server error',
     });
   }
 };
 
 exports.getuser = (req, res) => {
   try {
-    res.send(userData);
+    res.status(200).json({
+      status: true,
+      message: 'users data retrieved successfully',
+      data: userData,
+    });
   } catch (error) {
     console.error(error);
     res.status(400).json({
       status: 'false',
-      message: 'Token is missing',
+      message: 'token is missing',
+    });
+  }
+};
+
+exports.getOne = (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const getOne = userData.find((data) => data.id === userId);
+    if (getOne) {
+      res.status(200).json({
+        status: true,
+        message: 'user retrieved successfully',
+        data: getOne,
+      });
+    } else {
+      res.status(404).json({
+        status: false,
+        message: 'user not found',
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      status: false,
+      message: 'internal server error',
     });
   }
 };
